@@ -101,25 +101,31 @@ func `<$`*[S, T](x: T, parser: Parser[S]): Parser[T] {.inline.} =
 
 func `<*`*[T, S](parser0: Parser[T], parser1: Parser[S]): Parser[T] {.inline.} =
   return proc(state: ParseState): ParseResult[T] =
+             let position = state.getPosition
              let r0: ParseResult[T] = parser0 state
              if r0.isOk:
                let r1: ParseResult[S] = parser1 state
-               return if r1.isOk: r0
-                      else: fail[T](r1)
+               if r1.isOk:
+                 return r0
+               else:
+                 state.setPosition position
+                 return fail[T](r1)
              else:
+               state.setPosition position
                return r0
 
 func `*>`*[S, T](parser0: Parser[S], parser1: Parser[T]): Parser[T] {.inline.} =
-  return func(state: ParseState): ParseResult[T] =
-    let res = parser0 state
-    if res.isOk:
-      return parser1 state
-    return fail[T](
-      res.error.unexpected,
-      res.error.expected,
-      state,
-      res.error.message,
-    )
+  return proc(state: ParseState): ParseResult[T] =
+    let position = state.getPosition
+    let res0 = parser0 state
+    if res0.isOk:
+      let res1 = parser1 state
+      if res1.isOk:
+        return res1
+      else:
+        return fail[T](res1)
+    state.setPosition position
+    return fail[T](res0)
 
 template `>>`*[S, T](parser0: Parser[S], parser1: Parser[T]): Parser[T] =
   parser0.flatMap constant[S, Parser[T]]parser1
