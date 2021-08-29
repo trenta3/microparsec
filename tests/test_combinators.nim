@@ -1,4 +1,5 @@
 import unittest
+import sequtils
 
 import microparsec
 
@@ -36,6 +37,21 @@ suite "basic combinators":
       pb3 = ch('h') <|> ch('e') <|> ch 'l'
     for s in cases:
       check pc3.debugParse(s) == pb3.debugParse s
+
+    let
+      word = many1(ch('a'))
+      hyped = many1(ch('a')) <* ch('\'')
+      pc4 = choice([hyped, word])
+      pb4 = hyped <|> word
+      cases = ["aa'", "aa"]
+      expected = [
+        $(@['a', 'a'], ""),
+        $(@['a', 'a'], ""),
+      ]
+    for i, s in cases:
+      check pc4.debugParse(s) == pb4.debugParse(s)
+      check pc4.debugParse(s) == expected[i]
+    check pc4.debugParse("'") == $(unexpected: "\'\\\'\'", expected: @["\'a\'"])
 
   test "option":
     let p = option('c', ch 'a')

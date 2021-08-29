@@ -123,6 +123,10 @@ template getPosition*(state: ParseState): int =
   state.stream.getPosition
 
 
+template setPosition*(state: ParseState, position: int): void =
+  ## Sets the current position in the `ParseState` `state`.
+  state.stream.setPosition position
+  
 template readChar*(state: ParseState): char =
   ## Reads a char from the `ParseState` `state`.
   ## Raises `IOError` if an error occurred.

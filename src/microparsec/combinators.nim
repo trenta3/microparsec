@@ -52,14 +52,17 @@ func choice*[T](parsers: openArray[Parser[T]]): Parser[T] {.inline.} =
   # <https://github.com/nim-lang/Nim/issues/17187>.
   let parsers = @parsers
 
-  return func(state: ParseState): ParseResult[T] =
+  return proc(state: ParseState): ParseResult[T] =
     # We could use OrderedSet[string] in the future
     var expecteds, messages: seq[string]
     for parser in parsers:
+      let oldpos = state.getPosition
       result = parser state
       if result.isOk:
         return
       else:
+        # Update the Stream state to get back to where it was
+        state.setPosition oldpos
         # Update reported data, so that it matches the state
         if result.error.message notin messages:
           messages.add result.error.message

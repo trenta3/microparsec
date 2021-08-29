@@ -59,11 +59,14 @@ func flatMap*[S, T](parser: Parser[S], f: S -> Parser[T]): Parser[T] {.inline.} 
 
 func `<|>`*[T](parser0, parser1: Parser[T]): Parser[T] {.inline.} =
   ## Create a `Parser` as a choice combination between two other `Parser`s.
-  return func(state: ParseState): ParseResult[T] =
+  return proc(state: ParseState): ParseResult[T] =
+    let position = state.getPosition
     let res0 = parser0 state
     if res0.isOk:
       return res0
-
+    # Otherwise we need to reset the parser state
+    state.setPosition position
+    
     let res1 = parser1 state
     if res1.isOk:
       return res1
